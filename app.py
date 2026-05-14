@@ -1,4 +1,6 @@
 import os
+from collections import defaultdict
+
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -86,9 +88,10 @@ def _render_ai_analysis(deck: Deck, stats: DeckStats) -> None:
             try:
                 analysis = get_ai_analysis(deck, stats, api_key)
                 st.session_state.ai_analysis = analysis
-                st.rerun()
             except Exception as e:
                 st.error(f"AI analysis failed: {e}")
+            else:
+                st.rerun()
 
     analysis: AIAnalysis | None = st.session_state.get("ai_analysis")
     if not analysis:
@@ -122,7 +125,6 @@ def _render_ai_analysis(deck: Deck, stats: DeckStats) -> None:
 
 
 def _render_decklist(deck: Deck) -> None:
-    from collections import defaultdict
     grouped: dict[str, list] = defaultdict(list)
     for card in deck.cards:
         grouped[get_primary_type(card.type_line)].append(card)
