@@ -17,7 +17,8 @@ def build_prompt(deck: Deck, stats: DeckStats) -> str:
     card_list = ""
     for type_name in sorted(grouped):
         cards = grouped[type_name]
-        card_list += f"\n{type_name}s ({len(cards)}):\n"
+        plural = "Sorceries" if type_name == "Sorcery" else f"{type_name}s"
+        card_list += f"\n{plural} ({len(cards)}):\n"
         for c in sorted(cards, key=lambda x: x.name):
             card_list += f"  - {c.quantity}x {c.name} [{c.mana_cost}]\n"
 
@@ -67,18 +68,23 @@ def get_ai_analysis(deck: Deck, stats: DeckStats, api_key: str) -> AIAnalysis:
     client = anthropic.Anthropic(api_key=api_key)
     message = client.messages.create(
         model=MODEL,
-        max_tokens=2048,
+        max_tokens=4096,
         messages=[{"role": "user", "content": build_prompt(deck, stats)}],
     )
     raw = message.content[0].text.strip()
     raw = re.sub(r"^```(?:json)?\n?", "", raw)
-    raw = re.sub(r"\n?```$", "", raw)
-    data = json.loads(raw)
+    raw = re.sub(r"```\s*$", "", raw).strip()
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"AI returned invalid JSON: {exc}\n\nRaw response:\n{raw[:500]}") from exc
     return AIAnalysis(
         themes=data.get("themes", []),
         playstyle=data.get("playstyle", ""),
         strengths=data.get("strengths", []),
         weaknesses=data.get("weaknesses", []),
-        adds=[Suggestion(**s) for s in data.get("adds", [])],
-        cuts=[Suggestion(**s) for s in data.get("cuts", [])],
+        adds=[Suggestion(card_name=s["card_name"], mana_cost=s["mana_cost"], reason=s["reason"])
+              for s in data.get("adds", [])],
+        cuts=[Suggestion(card_name=s["card_name"], mana_cost=s["mana_cost"], reason=s["reason"])
+              for s in data.get("cuts", [])],
     )

@@ -86,3 +86,30 @@ def test_get_ai_analysis_strips_markdown_fences():
         analysis = get_ai_analysis(_make_minimal_deck(), _make_minimal_stats(), api_key="test")
 
     assert analysis.themes == ["Superfriends", "Proliferate"]
+
+
+def test_get_ai_analysis_raises_on_invalid_json():
+    mock_message = MagicMock()
+    mock_message.content[0].text = "this is not json"
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_message
+
+    with patch("ai.anthropic.Anthropic", return_value=mock_client):
+        with pytest.raises(ValueError, match="AI returned invalid JSON"):
+            get_ai_analysis(_make_minimal_deck(), _make_minimal_stats(), api_key="test")
+
+
+def test_get_ai_analysis_handles_extra_keys_in_suggestion():
+    response_with_extra = {**_MOCK_AI_RESPONSE}
+    response_with_extra["adds"] = [
+        {"card_name": "Cyclonic Rift", "mana_cost": "{1}{U}", "reason": "Board reset.", "set": "RTR", "price": 12.5}
+    ]
+    mock_message = MagicMock()
+    mock_message.content[0].text = json.dumps(response_with_extra)
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_message
+
+    with patch("ai.anthropic.Anthropic", return_value=mock_client):
+        analysis = get_ai_analysis(_make_minimal_deck(), _make_minimal_stats(), api_key="test")
+
+    assert analysis.adds[0].card_name == "Cyclonic Rift"
