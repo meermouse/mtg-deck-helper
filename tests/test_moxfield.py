@@ -165,3 +165,19 @@ def test_scryfall_lookup_calls_api():
     mock_get.assert_called_once()
     assert "fuzzy" in mock_get.call_args.kwargs["params"]
     assert result["name"] == "Sol Ring"
+
+
+def test_parse_decklist_moxfield_clipboard_format():
+    text = (
+        "Commander\n"
+        "1 Atraxa, Praetors' Voice *CMDR*\n\n"
+        "Mainboard\n"
+        "1 Sol Ring (CMR) 263\n"
+        "1 Forest\n"
+    )
+    with patch("moxfield._scryfall_lookup", side_effect=_mock_scryfall):
+        with patch("moxfield.time.sleep"):
+            deck = parse_decklist(text, commander_override=None)
+    assert deck.commander.name == "Atraxa, Praetors' Voice"
+    sol = next(c for c in deck.cards if c.name == "Sol Ring")
+    assert sol.quantity == 1

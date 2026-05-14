@@ -85,6 +85,10 @@ def parse_decklist(text: str, commander_override: str | None) -> Deck:
             continue
         qty, name = int(m.group(1)), m.group(2).strip()
 
+        # Strip Moxfield clipboard annotations: (SET) 123 and *TAGS*
+        name = re.sub(r"\s*\([A-Z0-9]{2,6}\)\s*\d*\s*$", "", name).strip()
+        name = re.sub(r"\s*\*[A-Z]+\*\s*$", "", name).strip()
+
         if current_section == "commander" and commander_name is None:
             commander_name = name
         entries.append((current_section, qty, name))
@@ -103,8 +107,6 @@ def parse_decklist(text: str, commander_override: str | None) -> Deck:
     cards: list[Card] = []
     commander: Card | None = None
     for section, qty, name in entries:
-        if section == "skip":
-            continue
         data = cache[name]
         is_cmd = name == commander_name
         card = Card(
