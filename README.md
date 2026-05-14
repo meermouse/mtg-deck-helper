@@ -1,6 +1,7 @@
 # MTG Deck Helper
 
 A web application to help Magic: The Gathering players build and manage their decks.
+It uses https://moxfield.com/
 
 ## Setup
 
