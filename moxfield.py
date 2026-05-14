@@ -17,7 +17,7 @@ def extract_deck_id(url: str) -> str:
 
 def fetch_from_url(url: str) -> Deck:
     deck_id = extract_deck_id(url)
-    response = requests.get(_MOXFIELD_API.format(deck_id), headers=_HEADERS)
+    response = requests.get(_MOXFIELD_API.format(deck_id), headers=_HEADERS, timeout=10)
     response.raise_for_status()
     return _parse_moxfield_response(response.json(), source_url=url)
 
