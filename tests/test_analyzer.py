@@ -136,3 +136,43 @@ def test_get_primary_type_land():
 
 def test_get_primary_type_other():
     assert get_primary_type("Tribal Instant — Sliver") == "Instant"
+
+
+def _make_cards(tuples: list[tuple]) -> list[dict]:
+    """Convert (name, type_line, mana_cost, cmc) tuples to dicts for _make_deck."""
+    return [
+        {"name": name, "type_line": type_line, "mana_cost": mana_cost, "cmc": cmc}
+        for name, type_line, mana_cost, cmc in tuples
+    ]
+
+
+def test_ramp_health_flag_warning():
+    cards = _make_cards(
+        [("Sol Ring", "Artifact", "{1}", 1.0)] * 8
+        + [("Forest", "Basic Land — Forest", "", 0.0)] * 36
+        + [("Gray Ogre", "Creature", "{2}{R}", 3.0)] * 55
+    )
+    stats = analyze(_make_deck(cards))
+    ramp_flag = next(f for f in stats.health_flags if f.label == "Ramp")
+    assert ramp_flag.status == "warning"
+
+
+def test_draw_health_flag_error():
+    cards = _make_cards(
+        [("Rhystic Study", "Enchantment", "{2}{U}", 3.0)] * 5
+        + [("Forest", "Basic Land — Forest", "", 0.0)] * 36
+        + [("Gray Ogre", "Creature", "{2}{R}", 3.0)] * 58
+    )
+    stats = analyze(_make_deck(cards))
+    draw_flag = next(f for f in stats.health_flags if f.label == "Card Draw")
+    assert draw_flag.status == "error"
+
+
+def test_cmc_health_flag_warning():
+    cards = _make_cards(
+        [("Forest", "Basic Land — Forest", "", 0.0)] * 36
+        + [("Emrakul", "Creature", "{15}", 15.0)] * 63
+    )
+    stats = analyze(_make_deck(cards))
+    cmc_flag = next(f for f in stats.health_flags if f.label == "Average CMC")
+    assert cmc_flag.status == "warning"

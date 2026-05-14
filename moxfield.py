@@ -142,5 +142,7 @@ def _scryfall_lookup(card_name: str) -> dict:
         headers=_HEADERS,
         timeout=10,
     )
+    if response.status_code == 404:
+        raise ValueError(f"Card not found on Scryfall: '{card_name}'. Check the spelling.")
     response.raise_for_status()
     return response.json()

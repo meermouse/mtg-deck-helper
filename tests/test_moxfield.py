@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from moxfield import extract_deck_id, fetch_from_url, parse_decklist, _scryfall_lookup
+from moxfield import extract_deck_id, fetch_from_url, parse_decklist, _scryfall_lookup, _parse_moxfield_response
 
 
 def test_extract_deck_id_standard_url():
@@ -181,3 +181,9 @@ def test_parse_decklist_moxfield_clipboard_format():
     assert deck.commander.name == "Atraxa, Praetors' Voice"
     sol = next(c for c in deck.cards if c.name == "Sol Ring")
     assert sol.quantity == 1
+
+
+def test_parse_moxfield_response_no_commander_raises():
+    data = {"name": "Test Deck", "format": "commander", "boards": {"commanders": {"cards": {}}, "mainboard": {"cards": {}}}}
+    with pytest.raises(ValueError, match="No commander found"):
+        _parse_moxfield_response(data, source_url=None)
