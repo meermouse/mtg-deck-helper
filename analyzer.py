@@ -15,7 +15,7 @@ _DRAW_ORACLE = [
 _INTERACTION_ORACLE = [
     re.compile(r"destroy target", re.IGNORECASE),
     re.compile(r"exile target", re.IGNORECASE),
-    re.compile(r"counter target (?:spell|ability|activated|triggered)", re.IGNORECASE),
+    re.compile(r"counter target (?:\w+ )*(?:spell|ability|activated|triggered)", re.IGNORECASE),
     re.compile(r"return target .{0,40} to (?:its|their) owner", re.IGNORECASE),
     re.compile(r"deals? \d+ damage to (?:target|any)", re.IGNORECASE),
 ]
@@ -164,8 +164,8 @@ def analyze(deck: Deck) -> DeckStats:
             color_pips[color] += count
 
     ramp_count = sum(1 for c in expanded if not _is_land(c) and _is_ramp(c))
-    draw_count = sum(1 for c in expanded if _is_draw(c))
-    interaction_count = sum(1 for c in expanded if _is_interaction(c))
+    draw_count = sum(1 for c in expanded if not _is_land(c) and _is_draw(c))
+    interaction_count = sum(1 for c in expanded if not _is_land(c) and _is_interaction(c))
 
     return DeckStats(
         land_count=land_count,
